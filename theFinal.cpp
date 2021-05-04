@@ -20,40 +20,53 @@ int fsc(int*, int);
 int nfsc(int*, int);
 void makeTwoTables(int*, int*, int*, int);
 void checkForEqualityInTable(int**, int, int*, int, int*);
-int acceptanceNumber();
+
+int acceptanceNumber(); // used only for acceptance of dfa
 
 //End of function declarations
 
 //Minimization of DFA
 //mainMinimization function definition
 
+//++++++++++++
+//Place where the main function call ends. In the transition.txt file, the transition table for the dfa will be given. So using that n and m wil b calculated which is the number of 
+//alphabets and no of nodes. 
 void mainMinimization(int theIP){
   int n,m;
 
   n = noOfAlphabets();
   m = noOfNodes();
 
+  //creating string array to store all the names of alphabets, nodes etc.
   int statesOfNodes[m] = {0};
   string namesOfNodes[m];
   string namesOfAlphabets[n];
-
+  
+  //once the array is created, these functions store the node names, alphabet names and state data(which is final state, which is non final state) using following
+  //three function calls.
   storeNodeNames(namesOfNodes, m, n);
   storeAlphabetNames(namesOfAlphabets, n);
   storeStateData(statesOfNodes, m, n);
 
+  //after the names are stored, it's place to store the transition table. Before that it dynamically creates a 2d array. 
   int **transitionMatrix = (int **)malloc(m * sizeof(int *));
   for (int r = 0; r < m; r++)
        transitionMatrix[r] = (int *)malloc(n * sizeof(int));
 
+  //since 2d array created, now the function call stores the matrix
   storeTransition(transitionMatrix, m, n);
 
 
-
+  //********************************************  WORKS ONLY IF THE IP==2 (ACCEPTANCE OF DFA CALLED FROM MAIN FUNCTION ) ***************************************
+  
   if(theIP == 2){
     int currentState = 0, flag = 0, value = 0;
+    //this function gets the number of alphabets in the input langauge
     int numberOfInput = acceptanceNumber();
+    //creates a string array to store that
     string theAcceptanceInput[numberOfInput];
-
+    
+    //this opens the file and reads all the input alphabet given and stores then in the array
     fstream theFile;
     int smallN;
     theFile.open("accept.txt", ios::in);
@@ -67,6 +80,8 @@ void mainMinimization(int theIP){
       }
 
     }
+    
+    //this checks for each alphabet, which state it moves after each turn. if the alphabet is not present program is exited
     for(int i=0;i<numberOfInput;i++){
       flag = 0;
       for(int j=0;j<n;j++){
@@ -80,8 +95,10 @@ void mainMinimization(int theIP){
         cout<<"\nThe Given Language doesn't work for the respective Transition table given ! Sorry";
         exit(0);
       }
+      //changes current state according to where it moves
       currentState = transitionMatrix[currentState][value];
     }
+    
     cout<<"\nYour Given Language :  ";
     for(int j=0;j<numberOfInput;j++){
       cout<<theAcceptanceInput[j];
@@ -96,7 +113,13 @@ void mainMinimization(int theIP){
     exit(0);
 
   }
+   //*************************************  END OF ACCEPTANCE OF DFA FUNCTION ... EXECUTED ONLY IF CASE 2 IN MAIN CALLED **********************************************
 
+  //to find minimization of dfa we need to remove the states which are unreachable from teh initial state with any moves.
+  //for that purpose we have to find the create a graph and closure of it (check transitive closure of a graph in google for more details). 
+  //both arrays are created dynamically.
+  
+  
   int **theGraph = (int **)malloc(m * sizeof(int *));
   for (int r = 0; r < m; r++)
        theGraph[r] = (int *)malloc(m * sizeof(int));
@@ -106,19 +129,26 @@ void mainMinimization(int theIP){
        theClosure[r] = (int *)malloc(m * sizeof(int));
 
 
+  //the data for both is stored in the arrays.
   graphMatrix(theGraph, transitionMatrix, m, n);
   closureMatrix(theClosure, theGraph, m);
   removeNonReachables(theClosure, statesOfNodes, m, n);
+  
+  //this counts the no of final and non final states.
   int finalStatesCount = fsc(statesOfNodes, m);
   int nonFinalStatesCount = nfsc(statesOfNodes, m);
 
+  //array for final and non final states
   int FinalStates[finalStatesCount];
   int NonFinalStates[nonFinalStatesCount];
 
+  //the next step to find minimzation is to make two tables one containing all final states, otehr non final states. find if there is any equal rows.
+  //teh following funcction does those. (check this for more explanation : https://www.javatpoint.com/minimization-of-dfa
   makeTwoTables(FinalStates, NonFinalStates, statesOfNodes, m);
   checkForEqualityInTable(transitionMatrix, n, FinalStates, finalStatesCount, statesOfNodes);
   checkForEqualityInTable(transitionMatrix, n, NonFinalStates, nonFinalStatesCount, statesOfNodes);
 
+  //this prints the final output
   cout<<"\nTHE FINAL TRANSITION TABLE IS";
   cout<<"\n\n\n";
   for(int i=0;i<n;i++){
@@ -138,6 +168,7 @@ void mainMinimization(int theIP){
   }
 }
 
+// no of alphabets in teh language used in acceptance of dfa only
 int acceptanceNumber(){
   fstream theFile;
   int smallN;
@@ -152,6 +183,7 @@ int acceptanceNumber(){
 
 }
 
+//find no of alphabets 
 int noOfAlphabets(){
   fstream theFile;
   int numberOfAlphabets;
@@ -165,6 +197,7 @@ int noOfAlphabets(){
   theFile.close();
   return numberOfAlphabets;
 }
+
 
 int noOfNodes(){
   fstream theFile;
@@ -348,7 +381,10 @@ void checkForEqualityInTable(int **transitionMatrix, int n, int *FinalStates, in
   }
 }
 
+
 //main
+//+++++++
+//This is the driver function of the entire program. It calls mainMinimization function with paramter 1 if DFA has to be minimized. If the acceptance is to be found, then it is called with paramter 2
 
 int main(){
   int choice;
